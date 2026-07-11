@@ -1,0 +1,184 @@
+# Golden evaluation set — LSM6DSOX Technical-Support Agent
+# Source of truth: LSM6DSOX datasheet DS12814 Rev 4 (June 2024)
+#
+# Schema per entry:
+#   id:              stable unique id
+#   category:        factual | register | conceptual | procedural | conditional | pointer | out_of_scope
+#   question:        the user query
+#   expected_answer: ground-truth answer or the key facts a correct answer must contain
+#   source:          where in the docs it comes from (for retrieval scoring)
+#   difficulty:      easy | medium | hard
+#
+# Usage notes:
+#   - For `out_of_scope`, a CORRECT answer is the agent declining / saying it's not in the
+#     documentation. Score these on refusal, not on content.
+#   - Keep ~15-30% of the full set out_of_scope.
+#   - Grow this from 24 -> 50-100 entries once the harness runs.
+
+- id: fact-whoami
+  category: factual
+  question: "What is the WHO_AM_I register value for the LSM6DSOX?"
+  expected_answer: "6Ch (01101100 binary), at register address 0Fh."
+  source: "Section 9.14 WHO_AM_I (0Fh)"
+  difficulty: easy
+
+- id: fact-accel-fs
+  category: factual
+  question: "Which accelerometer full-scale ranges does the LSM6DSOX support?"
+  expected_answer: "±2, ±4, ±8, and ±16 g."
+  source: "Features; Module specifications table"
+  difficulty: easy
+
+- id: fact-gyro-fs
+  category: factual
+  question: "What angular rate (gyroscope) full-scale ranges are available?"
+  expected_answer: "±125, ±250, ±500, ±1000, and ±2000 dps."
+  source: "Features; Module specifications table"
+  difficulty: easy
+
+- id: fact-accel-sens-2g
+  category: factual
+  question: "What is the accelerometer sensitivity at the ±2 g full scale?"
+  expected_answer: "0.061 mg/LSB."
+  source: "Module specifications table (LA_So)"
+  difficulty: easy
+
+- id: fact-fifo
+  category: factual
+  question: "How large is the FIFO on the LSM6DSOX?"
+  expected_answer: "Up to 9 KB (smart FIFO with compression and dynamic allocation)."
+  source: "Features; Overview"
+  difficulty: easy
+
+- id: fact-supply
+  category: factual
+  question: "What is the analog supply voltage range?"
+  expected_answer: "1.71 V to 3.6 V. IO supply is independent, from 1.62 V."
+  source: "Features; Module specifications"
+  difficulty: easy
+
+- id: fact-temp-range
+  category: factual
+  question: "What is the operating temperature range?"
+  expected_answer: "-40 °C to +85 °C."
+  source: "Module specifications (Top)"
+  difficulty: easy
+
+- id: fact-package
+  category: factual
+  question: "What package does the LSM6DSOX come in and what are its dimensions?"
+  expected_answer: "LGA-14L, 2.5 x 3.0 x 0.83 mm."
+  source: "Product summary; Overview"
+  difficulty: easy
+
+- id: fact-current
+  category: factual
+  question: "What is the typical supply current in combo high-performance mode?"
+  expected_answer: "0.55 mA."
+  source: "Features; Description"
+  difficulty: easy
+
+- id: reg-enable-accel
+  category: register
+  question: "Which register and bits do I use to turn on the accelerometer and set its output data rate?"
+  expected_answer: "CTRL1_XL (address 10h); write the ODR_XL[3:0] bits to select the data rate and bring it out of power-down."
+  source: "Section 8 Register mapping; accelerometer control description"
+  difficulty: medium
+
+- id: reg-enable-gyro
+  category: register
+  question: "How do I activate the gyroscope from power-down?"
+  expected_answer: "Write the ODR_G[3:0] bits in CTRL2_G (address 11h)."
+  source: "Section 8 Register mapping; gyroscope control description"
+  difficulty: medium
+
+- id: reg-int1-addr
+  category: register
+  question: "What is the register address of INT1_CTRL?"
+  expected_answer: "0Dh."
+  source: "Section 8 Register mapping"
+  difficulty: easy
+
+- id: reg-temp-out
+  category: register
+  question: "From which registers do I read the embedded temperature sensor output?"
+  expected_answer: "OUT_TEMP_L (20h) and OUT_TEMP_H (21h)."
+  source: "Section 8 Register mapping"
+  difficulty: medium
+
+- id: concept-mlc
+  category: conceptual
+  question: "What is the Machine Learning Core in the LSM6DSOX and what is it used for?"
+  expected_answer: "An embedded programmable core that runs decision-tree ML models directly on the sensor for in-sensor classification (e.g. activity recognition), enabling always-on features at very low power without waking the host. Detailed configuration is in application note AN5259."
+  source: "Section 2.4 Machine learning core; AN5259"
+  difficulty: medium
+
+- id: concept-fsm-vs-mlc
+  category: conceptual
+  question: "What is the difference between the finite state machine and the machine learning core?"
+  expected_answer: "Both are embedded programmable features. The FSM runs user-defined state machines for gesture/event logic (see AN5273); the MLC runs decision-tree classifiers for pattern recognition (see AN5259). They can be used together."
+  source: "Sections 2.3/2.4; AN5273; AN5259"
+  difficulty: hard
+
+- id: concept-modes
+  category: conceptual
+  question: "What operating modes does the LSM6DSOX offer for power vs. performance?"
+  expected_answer: "It supports high-performance, normal, low-power, and ultralow-power modes, trading current consumption against noise/performance, enabling always-on operation."
+  source: "Module specifications (noise/current tables); Overview"
+  difficulty: medium
+
+- id: proc-read-accel
+  category: procedural
+  question: "What are the basic steps to start reading acceleration data over I2C?"
+  expected_answer: "Verify the device via WHO_AM_I (0Fh = 6Ch); set the accelerometer ODR and full-scale in CTRL1_XL (10h); optionally configure BDU/interrupts; then read the OUTX/OUTY/OUTZ accelerometer output registers (or use the FIFO / data-ready interrupt)."
+  source: "Register mapping; interface and control sections"
+  difficulty: hard
+
+- id: proc-freefall-int
+  category: procedural
+  question: "How do I route a free-fall interrupt to the INT1 pin?"
+  expected_answer: "Configure the free-fall threshold/duration registers, enable the free-fall function, and route it to INT1 via the INT1_CTRL / MD1_CFG interrupt-routing registers."
+  source: "Interrupt and embedded-functions sections"
+  difficulty: hard
+
+- id: cond-gyro-sens-2000
+  category: conditional
+  question: "If I set the gyroscope to ±2000 dps, what sensitivity should I expect?"
+  expected_answer: "70 mdps/LSB."
+  source: "Module specifications table (G_So)"
+  difficulty: medium
+
+- id: cond-best-accel-res
+  category: conditional
+  question: "Which accelerometer full-scale setting gives the finest resolution, and what is it?"
+  expected_answer: "±2 g, at 0.061 mg/LSB (smaller full scale = finer resolution)."
+  source: "Module specifications table (LA_So)"
+  difficulty: medium
+
+- id: pointer-mlc-an
+  category: pointer
+  question: "Where can I find detailed instructions for programming the Machine Learning Core?"
+  expected_answer: "Application note AN5259 (machine learning core)."
+  source: "Product resources; Section 2.4"
+  difficulty: easy
+
+- id: oos-price
+  category: out_of_scope
+  question: "How much does the LSM6DSOX cost per unit?"
+  expected_answer: "Not answerable from the datasheet — pricing is not in the technical documentation. The agent should say so rather than invent a number."
+  source: "N/A (out of scope)"
+  difficulty: medium
+
+- id: oos-competitor
+  category: out_of_scope
+  question: "Is the LSM6DSOX better than the Bosch BMI270?"
+  expected_answer: "Not answerable from this datasheet — it contains no competitor comparison. The agent should decline / stay within the documented device."
+  source: "N/A (out of scope)"
+  difficulty: medium
+
+- id: oos-false-premise
+  category: out_of_scope
+  question: "What is the wireless transmission range of the LSM6DSOX?"
+  expected_answer: "False premise — the LSM6DSOX is a wired IMU with SPI/I2C/I3C interfaces and has no wireless radio. The agent should correct the premise, not fabricate a range."
+  source: "N/A (out of scope / false premise)"
+  difficulty: hard

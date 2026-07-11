@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+.env.example
+.venv/
+venv/
+data/index/
+data/raw/*.pdf
+logs/
+.pytest_cache/
+.ruff_cache/
