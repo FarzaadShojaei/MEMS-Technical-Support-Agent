@@ -7,6 +7,8 @@
   retrieval_keys:
   - 6Ch
   - WHO_AM_I
+  answer_must_contain:
+  - 6Ch
 - id: fact-accel-fs
   category: factual
   question: Which accelerometer full-scale ranges does the LSM6DSOX support?
@@ -15,6 +17,8 @@
   difficulty: easy
   retrieval_keys:
   - ±2/±4/±8/±16 g
+  answer_must_contain:
+  - 16g
 - id: fact-gyro-fs
   category: factual
   question: What angular rate (gyroscope) full-scale ranges are available?
@@ -23,6 +27,8 @@
   difficulty: easy
   retrieval_keys:
   - ±125/±250/±500/±1000/±2000
+  answer_must_contain:
+  - 2000dps
 - id: fact-accel-sens-2g
   category: factual
   question: What is the accelerometer sensitivity at the ±2 g full scale?
@@ -30,6 +36,8 @@
   source: Module specifications table (LA_So)
   difficulty: easy
   retrieval_keys:
+  - '0.061'
+  answer_must_contain:
   - '0.061'
 - id: fact-fifo
   category: factual
@@ -39,6 +47,8 @@
   difficulty: easy
   retrieval_keys:
   - 9 KB
+  answer_must_contain:
+  - 9kb
 - id: fact-supply
   category: factual
   question: What is the analog supply voltage range?
@@ -47,6 +57,9 @@
   difficulty: easy
   retrieval_keys:
   - 1.71 V
+  answer_must_contain:
+  - '1.71'
+  - '3.6'
 - id: fact-temp-range
   category: factual
   question: What is the operating temperature range?
@@ -57,6 +70,9 @@
   - -40 to +85
   - -40°C to +85°C
   - -40 °C
+  answer_must_contain:
+  - '40'
+  - '85'
 - id: fact-package
   category: factual
   question: What package does the LSM6DSOX come in and what are its dimensions?
@@ -65,6 +81,8 @@
   difficulty: easy
   retrieval_keys:
   - 2.5 x 3.0 x 0.83
+  answer_must_contain:
+  - '0.83'
 - id: fact-current
   category: factual
   question: What is the typical supply current in combo high-performance mode?
@@ -73,6 +91,8 @@
   difficulty: easy
   retrieval_keys:
   - 0.55 mA
+  answer_must_contain:
+  - '0.55'
 - id: reg-enable-accel
   category: register
   question: Which register and bits do I use to turn on the accelerometer and set its output data rate?
@@ -83,6 +103,9 @@
   retrieval_keys:
   - ODR_XL
   - CTRL1_XL
+  answer_must_contain:
+  - CTRL1_XL
+  - ODR_XL
 - id: reg-enable-gyro
   category: register
   question: How do I activate the gyroscope from power-down?
@@ -92,6 +115,9 @@
   retrieval_keys:
   - ODR_G
   - CTRL2_G
+  answer_must_contain:
+  - CTRL2_G
+  - ODR_G
 - id: reg-int1-addr
   category: register
   question: What is the register address of INT1_CTRL?
@@ -100,6 +126,9 @@
   difficulty: easy
   retrieval_keys:
   - INT1_CTRL
+  answer_must_contain:
+  - INT1_CTRL
+  - 0Dh
 - id: reg-temp-out
   category: register
   question: From which registers do I read the embedded temperature sensor output?
@@ -107,6 +136,8 @@
   source: Section 8 Register mapping
   difficulty: medium
   retrieval_keys:
+  - OUT_TEMP_L
+  answer_must_contain:
   - OUT_TEMP_L
 - id: concept-mlc
   category: conceptual
@@ -167,6 +198,9 @@
   retrieval_keys:
   - '17.50'
   - mdps/LSB
+  answer_must_contain:
+  - '70'
+  - mdps
 - id: cond-best-accel-res
   category: conditional
   question: Which accelerometer full-scale setting gives the finest resolution, and what is it?
@@ -175,6 +209,8 @@
   difficulty: medium
   retrieval_keys:
   - '0.061'
+  answer_must_contain:
+  - '0.061'
 - id: pointer-mlc-an
   category: pointer
   question: Where can I find detailed instructions for programming the Machine Learning Core?
@@ -182,6 +218,8 @@
   source: Product resources; Section 2.4
   difficulty: easy
   retrieval_keys:
+  - AN5259
+  answer_must_contain:
   - AN5259
 - id: oos-price
   category: out_of_scope

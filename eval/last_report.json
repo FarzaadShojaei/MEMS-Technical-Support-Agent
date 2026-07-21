@@ -3,13 +3,13 @@
   "n": 24,
   "retrieval": {
     "scorable": 21,
-    "hit@5": 0.429,
-    "mrr": 0.302
+    "hit@5": 0.476,
+    "mrr": 0.317
   },
   "answers": {
     "graded": 24,
-    "correctness": 0.292,
-    "faithfulness": 0.5
+    "correctness": 0.375,
+    "faithfulness": 0.875
   },
   "by_category": {
     "conceptual": {
@@ -24,7 +24,7 @@
     },
     "factual": {
       "n": 9,
-      "retrieval_hit_rate": 0.22,
+      "retrieval_hit_rate": 0.33,
       "correctness": 0.44
     },
     "out_of_scope": {
@@ -45,7 +45,7 @@
     "register": {
       "n": 4,
       "retrieval_hit_rate": 0.75,
-      "correctness": 0.0
+      "correctness": 0.5
     }
   },
   "results": [
@@ -56,11 +56,12 @@
       "retrieval_hit": false,
       "retrieval_rank": null,
       "answer": "The provided documentation does not cover the WHO_AM_I register value.",
+      "grader": "deterministic",
       "correct": false,
-      "correct_reason": "The answer incorrectly states that the provided documentation does not cover the WHO_AM_I register value.",
-      "faithful": false,
-      "faithful_reason": "The WHO_AM_I register name and its address are not mentioned in the provided documentation.",
-      "latency_s": 30.8
+      "correct_reason": "missing required token(s): ['6Ch']",
+      "faithful": true,
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 17.2
     },
     {
       "id": "fact-accel-fs",
@@ -68,12 +69,13 @@
       "difficulty": "easy",
       "retrieval_hit": false,
       "retrieval_rank": null,
-      "answer": "According to [5], page 11, the accelerometer self-test limits are full-scale independent. However, it does not specify the exact full-scale ranges supported by the device.\n\nUnfortunately, the provided documentation does not explicitly mention the supported accelerometer full-scale ranges.",
+      "answer": "According to [5], page 11, the accelerometer self-test limits are full-scale independent. However, it does not explicitly list the supported full-scale ranges.\n\nHowever, we can infer that the device supports ±2 g and ±2000 dps (which is a gyroscope specification) from the following excerpts:\n\n* \"1LSb = 0.061 mg at ±2 g full scale.\" ([5], page 11)\n* \"16. The angular rate self-test output change is defined with the device in stationary condition as the absolute value of: OUTPUT[LSb] (self-test enabled) - OUTPUT[LSb] (self-test disabled). 1LSb = 70 mdps at ±2000 dps full scale.\" ([5], page 11)\n\nUnfortunately, the provided documentation does not explicitly list the supported accelerometer full-scale ranges.",
+      "grader": "deterministic",
       "correct": false,
-      "correct_reason": "The agent's answer fails to convey the exact full-scale ranges supported by the device.",
-      "faithful": false,
-      "faithful_reason": "The documentation does not explicitly mention the supported accelerometer full-scale ranges.",
-      "latency_s": 23.1
+      "correct_reason": "missing required token(s): ['16g']",
+      "faithful": true,
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 27.0
     },
     {
       "id": "fact-gyro-fs",
@@ -81,12 +83,13 @@
       "difficulty": "easy",
       "retrieval_hit": false,
       "retrieval_rank": null,
-      "answer": "According to [3] and [5], the gyroscope full-scale range is not explicitly mentioned. However, it can be inferred from the register descriptions that the OIS gyroscope has a full-scale setting of 6.66 kHz.\n\nThe UI chain gyroscope (OUTY_L_G, OUTY_H_G, OUTZ_L_G, and OUTZ_H_G) also has its full-scale and ODR settings determined by CTRL2_G (11h), but the specific full-scale range is not specified in [5].\n\nHowever, we can look at [3] again. The UI_OUTZ_L_G_OIS and UI_OUTZ_H_G_OIS registers have a description that says \"Data are according to the gyroscope full-scale and ODR (6.66 kHz) settings of the OIS gyroscope.\" This implies that the 6.66 kHz is indeed the ODR setting, but it does not explicitly mention the full-scale range.\n\nUnfortunately, I couldn't find any information on the available angular rate (gyroscope) full-scale ranges in the provided documentation excerpts.",
+      "answer": "According to [3] and [5], the gyroscope full-scale range is not explicitly mentioned. However, it can be inferred from the register descriptions that the OIS gyroscope has a full-scale setting of 6.66 kHz.\n\nThe UI chain gyroscope (OUTY_L_G, OUTY_H_G, OUTZ_L_G, and OUTZ_H_G) also has its full-scale and ODR settings determined by CTRL2_G (11h), but the specific full-scale range is not specified in [5].\n\nHowever, we can look at [3] again. The UI_OUTZ_L_G_OIS and UI_OUTZ_H_G_OIS registers have a description that states \"Data are according to the gyroscope full-scale and ODR (6.66 kHz) settings of the OIS gyroscope.\" This implies that the 6.66 kHz is indeed the ODR setting, but it does not explicitly state the full-scale range.\n\nUnfortunately, I couldn't find any information on the available angular rate (gyroscope) full-scale ranges in the provided documentation excerpts.",
+      "grader": "deterministic",
       "correct": false,
-      "correct_reason": "The agent's answer fails to convey any of the key facts of the ground truth.",
-      "faithful": false,
-      "faithful_reason": "The answer claims that the gyroscope full-scale range is not explicitly mentioned, but it actually is mentioned as 6.66 kHz in [3].",
-      "latency_s": 53.0
+      "correct_reason": "missing required token(s): ['2000dps']",
+      "faithful": true,
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 37.6
     },
     {
       "id": "fact-accel-sens-2g",
@@ -94,12 +97,13 @@
       "difficulty": "easy",
       "retrieval_hit": false,
       "retrieval_rank": null,
-      "answer": "The provided documentation does not cover the specific question about the accelerometer sensitivity at the ±2 g full scale. The document mentions that the sensitivity tolerance describes the range of sensitivities of a large number of sensors (see Table 2), but it does not provide the actual sensitivity value for the ±2 g full scale.",
+      "answer": "The provided documentation does not cover the specific question about the accelerometer sensitivity at the ±2 g full scale. The document mentions that the sensitivity tolerance describes the range of sensitivities of a large number of sensors (see Table 2), but it does not provide the actual sensitivity value for ±2 g full scale.\n\n(See [1] and [2])",
+      "grader": "deterministic",
       "correct": false,
-      "correct_reason": "The agent's answer incorrectly states that the documentation does not cover the specific question.",
-      "faithful": false,
-      "faithful_reason": "The document mentions sensitivity tolerance but not actual sensitivity value for ±2 g full scale.",
-      "latency_s": 26.3
+      "correct_reason": "missing required token(s): ['0.061']",
+      "faithful": true,
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 12.8
     },
     {
       "id": "fact-fifo",
@@ -108,11 +112,12 @@
       "retrieval_hit": false,
       "retrieval_rank": null,
       "answer": "According to [2], the LSM6DSOX embeds 3 KB of data in FIFO.",
+      "grader": "deterministic",
       "correct": false,
-      "correct_reason": "Agent's answer has a different value than the ground truth.",
+      "correct_reason": "missing required token(s): ['9kb']",
       "faithful": true,
-      "faithful_reason": "The value 3 KB and the mention of FIFO are present in [2]",
-      "latency_s": 19.4
+      "faithful_reason": "The value of 3 KB and the mention of FIFO are present in [2]",
+      "latency_s": 13.2
     },
     {
       "id": "fact-supply",
@@ -121,11 +126,12 @@
       "retrieval_hit": true,
       "retrieval_rank": 4,
       "answer": "According to [3], Table 3. Electrical characteristics, the analog supply voltage (VDD) range is:\n\n1.71 V to 3.6 V (see [3]).",
+      "grader": "deterministic",
       "correct": true,
-      "correct_reason": "Agent's answer conveys exact analog supply voltage range as ground truth.",
+      "correct_reason": "contains all required: ['1.71', '3.6']",
       "faithful": true,
       "faithful_reason": "The provided voltage range matches Table 3. Electrical characteristics.",
-      "latency_s": 28.6
+      "latency_s": 17.9
     },
     {
       "id": "fact-temp-range",
@@ -134,11 +140,12 @@
       "retrieval_hit": false,
       "retrieval_rank": null,
       "answer": "According to [1], the operating temperature range is -40°C to +85°C (see [1]).",
+      "grader": "deterministic",
       "correct": true,
-      "correct_reason": "Agent's answer conveys exact operating temperature range values.",
+      "correct_reason": "contains all required: ['40', '85']",
       "faithful": true,
       "faithful_reason": "Operating temperature range matches documentation.",
-      "latency_s": 18.6
+      "latency_s": 12.9
     },
     {
       "id": "fact-package",
@@ -147,24 +154,26 @@
       "retrieval_hit": true,
       "retrieval_rank": 1,
       "answer": "According to [1] and [3], the LSM6DSOX is available in a small plastic, land grid array (LGA) package of 2.5 x 3.0 x 0.83 mm.",
+      "grader": "deterministic",
       "correct": true,
-      "correct_reason": "The agent's answer conveys the exact dimensions and package type as the ground truth.",
+      "correct_reason": "contains all required: ['0.83']",
       "faithful": true,
-      "faithful_reason": "The package size and type are mentioned in both [1] and [3]",
-      "latency_s": 23.7
+      "faithful_reason": "The package dimensions are mentioned in both [1] and [3]",
+      "latency_s": 17.7
     },
     {
       "id": "fact-current",
       "category": "factual",
       "difficulty": "easy",
-      "retrieval_hit": false,
-      "retrieval_rank": null,
+      "retrieval_hit": true,
+      "retrieval_rank": 3,
       "answer": "According to [3], Table 3. Electrical characteristics, the typical supply current for Gyroscope and accelerometer in high-performance mode (IddHP) is 0.55 mA (see [3]).",
+      "grader": "deterministic",
       "correct": true,
-      "correct_reason": "Agent's answer conveys exact value of 0.55 mA.",
+      "correct_reason": "contains all required: ['0.55']",
       "faithful": true,
-      "faithful_reason": "The value of IddHP is correctly stated as 0.55 mA.",
-      "latency_s": 24.9
+      "faithful_reason": "The value of IddHP is correctly stated as 0.55 mA according to Table 3.",
+      "latency_s": 20.4
     },
     {
       "id": "reg-enable-accel",
@@ -173,11 +182,12 @@
       "retrieval_hit": true,
       "retrieval_rank": 2,
       "answer": "To turn on the accelerometer, you need to write a value to the CTRL6_C register (15h) and set the XL_HM_MODE bit to 0. This enables high-performance operating mode for the accelerometer.\n\nTo set the output data rate of the accelerometer, you need to write a value to the CTRL1_XL register (10h). The ODR settings are described in Table 38 of the documentation, but it is not specified here which bits control the output data rate. However, according to [2], the OUTZ_L_A and OUTZ_H_A registers contain the linear acceleration sensor Z-axis output value, and their values depend on the full-scale and ODR settings of the accelerometer user interface.\n\nTherefore, you need to write a value to CTRL1_XL (10h) to set the ODR, but the specific bits that control the ODR are not specified in this context.",
+      "grader": "deterministic",
       "correct": false,
-      "correct_reason": "The agent incorrectly stated that the XL_HM_MODE bit needs to be set to 0 and mentioned OUTZ_L_A and OUTZ_H_A registers which are not relevant to setting ODR.",
-      "faithful": false,
-      "faithful_reason": "The CTRL6_C register description does not specify that setting XL_HM_MODE to 0 enables high-performance operating mode.",
-      "latency_s": 49.9
+      "correct_reason": "missing required token(s): ['ODR_XL']",
+      "faithful": true,
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 28.2
     },
     {
       "id": "reg-enable-gyro",
@@ -185,12 +195,13 @@
       "difficulty": "medium",
       "retrieval_hit": true,
       "retrieval_rank": 4,
-      "answer": "According to [4], page 26, \"The gyroscope is activated from power-down by writing ODR_G[3:0] in CTRL2_G (11h).\" \n\nTo activate the gyroscope, you need to write a value to the ODR_G[3:0] bits in the CTRL2_G register. The default value for these bits is 0000 (see [5], page 55). You can set any of the values listed in Table 55 to select the desired output data rate for the gyroscope, depending on the value of G_HM_MODE in CTRL7_G (16h).",
-      "correct": false,
-      "correct_reason": "Agent's answer includes extra and incorrect information about G_HM_MODE",
-      "faithful": true,
-      "faithful_reason": "The provided information accurately describes how to activate the gyroscope.",
-      "latency_s": 36.3
+      "answer": "According to [4], page 26, \"The gyroscope is activated from power-down by writing ODR_G[3:0] in CTRL2_G (11h).\" \n\nSo, you need to write a value to the ODR_G[3:0] bits in the CTRL2_G register at address 11h. The default value for these bits is 0000 (see [5], page 55), which corresponds to power-down mode. To activate the gyroscope, you should set one or more of these bits to a non-zero value, depending on the desired output data rate (ODR). Refer to Table 55 in [5] for the available ODR settings and their corresponding bit values.",
+      "grader": "deterministic",
+      "correct": true,
+      "correct_reason": "contains all required: ['CTRL2_G', 'ODR_G']",
+      "faithful": false,
+      "faithful_reason": "The answer claims that writing a non-zero value to ODR_G[3:0] activates the gyroscope, but the context only states that it's necessary to write a value to these bits to activate the gyroscope from power-down mode.",
+      "latency_s": 34.2
     },
     {
       "id": "reg-int1-addr",
@@ -199,11 +210,12 @@
       "retrieval_hit": true,
       "retrieval_rank": 1,
       "answer": "According to [2], page 165, section 9.14:\n\n\"WHO_AM_I (0Fh) ... WHO_AM_I register (R). This is a read-only register. Its value is fixed at 6Ch.\"\n\nHowever, we are looking for the address of INT1_CTRL, not WHO_AM_I.\n\nAccording to [2], page 165, section 9.1:\n\n\"FUNC_CFG_ACCESS (01h) ... Register description ...\"\n\nAnd according to [1], Table 21, Registers address map:\n\nName\nType\nRegister address\nDefault\nComment\nHex\nBinary\n...\nINT1_CTRL\nR/W\n0D\n00001101\n00000000\n\nSo, the register address of INT1_CTRL is 0Dh (12 in decimal).",
-      "correct": false,
-      "correct_reason": "Agent's answer incorrectly references WHO_AM_I instead of INT1_CTRL",
+      "grader": "deterministic",
+      "correct": true,
+      "correct_reason": "contains all required: ['INT1_CTRL', '0Dh']",
       "faithful": true,
-      "faithful_reason": "All register information matches documentation",
-      "latency_s": 39.6
+      "faithful_reason": "The register address of INT1_CTRL is correctly identified as 0Dh (12 in decimal).",
+      "latency_s": 32.7
     },
     {
       "id": "reg-temp-out",
@@ -212,11 +224,12 @@
       "retrieval_hit": false,
       "retrieval_rank": null,
       "answer": "According to [5], the temperature sensor output data is available in two registers:\n\n* SPI2_OUT_TEMP_H (Table 208) for the high byte of the temperature value.\n* SPI2_OUT_TEMP (Table 209) for the low byte of the temperature value.\n\nThe temperature value is expressed as a two's complement sign extended on the MSB, so you need to read both registers to get the complete 16-bit temperature value.",
+      "grader": "deterministic",
       "correct": false,
-      "correct_reason": "Agent's answer contains incorrect register names and addresses.",
+      "correct_reason": "missing required token(s): ['OUT_TEMP_L']",
       "faithful": false,
       "faithful_reason": "The temperature value is not expressed as two's complement sign extended on the MSB.",
-      "latency_s": 28.1
+      "latency_s": 21.0
     },
     {
       "id": "concept-mlc",
@@ -225,11 +238,12 @@
       "retrieval_hit": true,
       "retrieval_rank": 1,
       "answer": "According to [1] and [3], the Machine Learning Core in the LSM6DSOX is a dedicated core that provides system flexibility by allowing some algorithms to be moved from the application processor to the MEMS sensor, resulting in consistent reduction in power consumption.\n\nThe Machine Learning Core logic allows identifying if a data pattern (e.g., motion, pressure, temperature, magnetic data) matches a user-defined set of classes. Typical examples of applications include activity detection like running, walking, driving, etc. (see [3]).",
+      "grader": "llm-judge",
       "correct": false,
       "correct_reason": "The agent's answer lacks key facts of the ground truth, such as always-on features and running decision-tree ML models directly on the sensor.",
       "faithful": true,
       "faithful_reason": "All claims are supported by the provided documentation excerpts.",
-      "latency_s": 32.2
+      "latency_s": 29.3
     },
     {
       "id": "concept-fsm-vs-mlc",
@@ -238,11 +252,12 @@
       "retrieval_hit": true,
       "retrieval_rank": 1,
       "answer": "According to [1] (see [1]), a finite state machine in the LSM6DSOX is used for motion detection, such as glance gestures, absolute wrist tilt, shake, and double-shake detection. It is a behavioral model composed of a finite number of states and transitions between states.\n\nOn the other hand, according to [2] (see [2]), the machine learning core in the LSM6DSOX identifies if a data pattern matches a user-defined set of classes, using algorithms such as activity detection like running, walking, driving, etc. It works on data patterns coming from the accelerometer and gyroscope sensors.\n\nThe key difference between the two is that the finite state machine is used for motion detection based on predefined states and transitions, while the machine learning core uses logical processing with configurable nodes to identify complex patterns in sensor data.\n\nAdditionally, [3] (see [3]) mentions that the machine learning core can be configured to run up to eight flows simultaneously and independently, whereas the finite state machines are independent but limited to 16 programs.",
+      "grader": "llm-judge",
       "correct": false,
       "correct_reason": "The agent's answer incorrectly states that the machine learning core uses 'logical processing with configurable nodes' and mentions specific algorithms.",
       "faithful": false,
       "faithful_reason": "The answer incorrectly states that the machine learning core uses algorithms such as activity detection like running, walking, driving, etc., which is not mentioned in [2]",
-      "latency_s": 48.7
+      "latency_s": 43.9
     },
     {
       "id": "concept-modes",
@@ -251,11 +266,12 @@
       "retrieval_hit": true,
       "retrieval_rank": 1,
       "answer": "According to [1], the LSM6DSOX offers the following operating modes:\n\n* High-performance mode (valid for all ODRs from 12.5 Hz up to 6.66 kHz) when XL_HM_MODE is set to 0.\n* Low-power mode (available for lower ODRs: 1.6, 12.5, 26, 52 Hz) and normal mode (available for ODRs equal to 104 and 208 Hz) when XL_HM_MODE is set to 1.\n\nAdditionally, [4] mentions that the LSM6DSOX has three operating modes available:\n\n* Only accelerometer active and gyroscope in power-down\n* Only gyroscope active and accelerometer in power-down\n* Both accelerometer and gyroscope sensors active with independent ODR (combo mode)\n\nNote that these modes are not explicitly described as \"power vs. performance\" modes, but rather as different configurations of the sensor's operating modes.\n\nIt is also worth mentioning that [5] simply reiterates the information from [1], which describes the accelerometer ultralow-power mode and its requirements.\n\nThe LSM6DSOX does not offer a direct trade-off between power consumption and performance. However, by selecting the appropriate operating mode (e.g., low-power or high-performance), the user can balance these two factors according to their specific application needs.",
+      "grader": "llm-judge",
       "correct": false,
       "correct_reason": "The agent's answer incorrectly states that there is no direct trade-off between power consumption and performance.",
-      "faithful": false,
-      "faithful_reason": "The answer incorrectly states that the LSM6DSOX offers a direct trade-off between power consumption and performance.",
-      "latency_s": 54.8
+      "faithful": true,
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 43.4
     },
     {
       "id": "proc-read-accel",
@@ -264,11 +280,12 @@
       "retrieval_hit": true,
       "retrieval_rank": 3,
       "answer": "To start reading acceleration data over I²C, follow these steps:\n\n1. Ensure that the device is properly connected and powered (see [2], page 40).\n2. Initialize the SPI/I²C interface by setting the I3C_disable bit to 0 in CTRL10_C (19h) register (see [4]).\n3. Configure the accelerometer user interface settings, including ODR, full-scale, and other parameters, using CTRL1_XL (10h) register.\n4. Read the acceleration data from OUTZ_L_A (2Ch) and OUTZ_H_A (2Dh) registers, which contain the linear acceleration sensor Z-axis output value in two's complement format.\n\nNote: The provided documentation does not cover the specific steps for enabling I²C communication or configuring the device for I²C mode. However, it is recommended to consult the application hints and register descriptions for more detailed information on initializing the device and accessing data over I²C.",
+      "grader": "llm-judge",
       "correct": false,
       "correct_reason": "The agent's answer incorrectly states that the acceleration data can be read from OUTZ_L_A and OUTZ_H_A registers, whereas the ground truth specifies OUTX/OUTY/OUTZ registers.",
       "faithful": true,
-      "faithful_reason": "All steps and register settings mentioned are described in the provided documentation.",
-      "latency_s": 46.3
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 38.2
     },
     {
       "id": "proc-freefall-int",
@@ -277,11 +294,12 @@
       "retrieval_hit": false,
       "retrieval_rank": null,
       "answer": "The provided documentation does not cover routing a free-fall interrupt to the INT1 pin. The sections [1] and [2] describe routing MLC interrupts to INT1 and INT2, respectively, but there is no mention of a free-fall interrupt in these sections.\n\nSection [3] describes the EMB_FUNC_INT2 register, which controls the signals carried over the INT2 pin, but it does not cover the INT1 pin. Section [4] mentions FSM12 to FSM9 interrupts being routed to INT1, but there is no mention of a free-fall interrupt in this section.\n\nSection [5] describes routing FSM4 to FSM1 interrupts to INT1, but again, there is no mention of a free-fall interrupt in this section.",
+      "grader": "llm-judge",
       "correct": false,
       "correct_reason": "The agent's answer incorrectly states that the documentation does not cover routing a free-fall interrupt to INT1.",
-      "faithful": false,
-      "faithful_reason": "The documentation does not explicitly mention a free-fall interrupt",
-      "latency_s": 39.4
+      "faithful": true,
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 31.0
     },
     {
       "id": "cond-gyro-sens-2000",
@@ -290,11 +308,12 @@
       "retrieval_hit": false,
       "retrieval_rank": null,
       "answer": "Unfortunately, the provided documentation does not specify the sensitivity of the gyroscope for a full-scale range of ±2000 dps. The sensitivity is mentioned in [1] as being determined by applying 1 g acceleration and noting the output value, but this method only applies to linear acceleration sensitivity.\n\nHowever, it is stated that the sensitivity tolerance describes the range of sensitivities of a large number of sensors (see Table 2), but the table itself is not provided.",
+      "grader": "deterministic",
       "correct": false,
-      "correct_reason": "The agent incorrectly stated that the documentation does not specify the sensitivity.",
-      "faithful": false,
-      "faithful_reason": "The method for determining sensitivity mentioned in [1] applies to linear acceleration sensitivity, not gyroscope sensitivity.",
-      "latency_s": 35.3
+      "correct_reason": "missing required token(s): ['70', 'mdps']",
+      "faithful": true,
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 17.7
     },
     {
       "id": "cond-best-accel-res",
@@ -302,12 +321,13 @@
       "difficulty": "medium",
       "retrieval_hit": false,
       "retrieval_rank": null,
-      "answer": "According to [1], the LSM6DSOX has ±2/±4/±8/±16 g full scale for the accelerometer. \n\nThe finest resolution is ±2 g (see [1]).",
+      "answer": "According to [1], the LSM6DSOX has ±2 g, ±4 g, ±8 g, and ±16 g full scale settings for the accelerometer.\n\nTo determine which one gives the finest resolution, we need to look at the register descriptions. However, the provided documentation does not contain any information about the resolution of each full-scale setting.\n\nBut we can infer that the finest resolution is achieved with the smallest full-scale value, which is ±2 g (see [1]).",
+      "grader": "deterministic",
       "correct": false,
-      "correct_reason": "Agent's answer does not convey the resolution value of ±0.061 mg/LSB",
+      "correct_reason": "missing required token(s): ['0.061']",
       "faithful": true,
-      "faithful_reason": "The values ±2/±4/±8/±16 g full scale for the accelerometer are mentioned in [1].",
-      "latency_s": 25.3
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 17.1
     },
     {
       "id": "pointer-mlc-an",
@@ -316,11 +336,12 @@
       "retrieval_hit": false,
       "retrieval_rank": null,
       "answer": "The provided documentation does not cover detailed instructions for programming the Machine Learning Core. However, it mentions that \"The results of the machine learning processing are available in dedicated output registers readable from the application processor at any time.\" (see [3]).\n\nAdditionally, Figure 3 on page 6 shows a block diagram of the Machine Learning Core, which may provide some insight into its operation.",
+      "grader": "deterministic",
       "correct": false,
-      "correct_reason": "The agent's answer incorrectly states that the provided documentation does not cover detailed instructions.",
-      "faithful": false,
-      "faithful_reason": "The documentation does not mention 'programming' but rather 'machine learning processing'",
-      "latency_s": 28.0
+      "correct_reason": "missing required token(s): ['AN5259']",
+      "faithful": true,
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 12.8
     },
     {
       "id": "oos-price",
@@ -329,11 +350,12 @@
       "retrieval_hit": null,
       "retrieval_rank": null,
       "answer": "The provided documentation does not cover pricing information for the LSM6DSOX.",
+      "grader": "llm-judge-refusal",
       "correct": true,
       "correct_reason": "The agent correctly declined to provide pricing information.",
-      "faithful": false,
-      "faithful_reason": "Pricing information for LSM6DSOX is not mentioned in the provided documentation.",
-      "latency_s": 18.1
+      "faithful": true,
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 10.1
     },
     {
       "id": "oos-competitor",
@@ -342,11 +364,12 @@
       "retrieval_hit": null,
       "retrieval_rank": null,
       "answer": "The provided documentation does not compare the LSM6DSOX to the Bosch BMI270. It only provides information about the features and specifications of the LSM6DSOX itself, but does not include any comparative data or analysis with other products. (see [1], [2], [3], [4])",
+      "grader": "llm-judge-refusal",
       "correct": true,
       "correct_reason": "The agent correctly declined to provide a comparison and referenced the documentation.",
       "faithful": true,
-      "faithful_reason": "The answer accurately reflects the provided documentation.",
-      "latency_s": 21.9
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 15.7
     },
     {
       "id": "oos-false-premise",
@@ -355,11 +378,12 @@
       "retrieval_hit": null,
       "retrieval_rank": null,
       "answer": "The provided documentation does not cover the wireless transmission range of the LSM6DSOX.",
+      "grader": "llm-judge-refusal",
       "correct": true,
       "correct_reason": "The agent correctly declined to provide an out-of-scope answer.",
       "faithful": true,
-      "faithful_reason": "The documentation explicitly states that wireless transmission range is not mentioned.",
-      "latency_s": 18.0
+      "faithful_reason": "refusal makes no factual claims",
+      "latency_s": 10.7
     }
   ]
 }

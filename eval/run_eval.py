@@ -27,6 +27,7 @@ make CI fail on regression.
 
 import argparse
 import json
+import re
 import statistics
 import sys
 import time
@@ -116,15 +117,58 @@ def _judge(prompt: str) -> dict:
         return {"correct": None, "faithful": None, "reason": f"judge output unparseable: {raw[:80]}"}
 
 
+# Categories whose ground truth is an exact string (value / register / address /
+# app-note id) -> graded deterministically, no LLM. Only conceptual & procedural,
+# where paraphrase matters, still use the LLM judge.
+DETERMINISTIC_CATEGORIES = {"factual", "register", "conditional", "pointer"}
+
+_REFUSAL_MARKERS = (
+    "does not cover", "not mentioned", "not specified", "does not specify",
+    "does not provide", "not provided", "could not find", "couldn't find",
+    "unable to find", "not in the provided", "not covered", "not explicitly",
+    "no information", "does not contain", "does not compare", "does not include",
+    "does not offer", "no comparative", "not available in the",
+)
+
+
+def _normalize(s: str) -> str:
+    """Collapse to alphanumerics only, lowercased.
+
+    Makes matching robust to PDF spacing artifacts (thin/non-breaking spaces),
+    punctuation, and unit formatting: "0.55 mA", "0.55\u2009mA" and "0.55mA"
+    all normalize to "055ma".
+    """
+    return re.sub(r"[^a-z0-9]", "", s.lower())
+
+
+def _is_refusal(answer: str) -> bool:
+    a = answer.lower()
+    return any(m in a for m in _REFUSAL_MARKERS)
+
+
 def eval_retrieval(entry: dict, chunks: list[dict]) -> dict:
     keys = entry.get("retrieval_keys") or []
     if not keys:
         return {"hit": None, "rank": None}  # not scorable (e.g. out_of_scope)
+    norm_keys = [_normalize(k) for k in keys]
     for rank, c in enumerate(chunks, start=1):
-        text = c["text"].lower()
-        if any(k.lower() in text for k in keys):
+        text = _normalize(c["text"])
+        if any(nk and nk in text for nk in norm_keys):
             return {"hit": True, "rank": rank}
     return {"hit": False, "rank": None}
+
+
+def grade_deterministic(entry: dict, answer: str) -> dict:
+    """Exact-value grading: every token in `answer_must_contain` must appear
+    (normalized) in the answer. No LLM, so it cannot mislabel."""
+    required = entry.get("answer_must_contain") or []
+    if not required:
+        return {"correct": None, "reason": "no answer_must_contain defined"}
+    norm_answer = _normalize(answer)
+    missing = [tok for tok in required if _normalize(tok) not in norm_answer]
+    if missing:
+        return {"correct": False, "reason": f"missing required token(s): {missing}"}
+    return {"correct": True, "reason": f"contains all required: {required}"}
 
 
 def run(limit: int | None, retrieval_only: bool, top_k: int) -> dict:
@@ -151,23 +195,41 @@ def run(limit: int | None, retrieval_only: bool, top_k: int) -> dict:
         if not retrieval_only:
             answer = generate_answer(e["question"], chunks)
             row["answer"] = answer
+            refusal = _is_refusal(answer)
 
-            if e["category"] == "out_of_scope":
+            # --- correctness: pick the cheapest reliable grader per category ---
+            cat = e["category"]
+            if cat in DETERMINISTIC_CATEGORIES:
+                verdict = grade_deterministic(e, answer)
+                row["grader"] = "deterministic"
+            elif cat == "out_of_scope":
+                # "Did the agent decline?" is a semantic question. The marker
+                # heuristic proved too brittle here (it missed the perfectly
+                # valid refusal "does not compare..."), so this one category
+                # uses the LLM judge — the one place it genuinely earns its keep.
                 verdict = _judge(JUDGE_REFUSAL_PROMPT.format(question=e["question"], answer=answer))
-            else:
+                row["grader"] = "llm-judge-refusal"
+            else:  # conceptual, procedural -> paraphrase matters, use the judge
                 verdict = _judge(
                     JUDGE_CORRECTNESS_PROMPT.format(
                         question=e["question"], expected=e["expected_answer"], answer=answer
                     )
                 )
+                row["grader"] = "llm-judge"
             row["correct"] = verdict.get("correct")
             row["correct_reason"] = verdict.get("reason")
 
-            faith = _judge(
-                JUDGE_FAITHFULNESS_PROMPT.format(context=build_context(chunks), answer=answer)
-            )
-            row["faithful"] = faith.get("faithful")
-            row["faithful_reason"] = faith.get("reason")
+            # --- faithfulness: a refusal makes no factual claims, so it is
+            #     faithful by construction; only judge substantive answers. ---
+            if refusal:
+                row["faithful"] = True
+                row["faithful_reason"] = "refusal makes no factual claims"
+            else:
+                faith = _judge(
+                    JUDGE_FAITHFULNESS_PROMPT.format(context=build_context(chunks), answer=answer)
+                )
+                row["faithful"] = faith.get("faithful")
+                row["faithful_reason"] = faith.get("reason")
 
         row["latency_s"] = round(time.perf_counter() - t0, 1)
         results.append(row)
