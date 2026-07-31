@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from eval.run_eval import _is_refusal  # noqa: E402
+from eval.run_eval import _is_refusal
 
 
 def load(path: Path) -> list[dict]:
@@ -30,7 +30,7 @@ def load(path: Path) -> list[dict]:
         print(f"No log file at {path} — serve some /ask requests first.")
         sys.exit(1)
     rows = []
-    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line:
             continue

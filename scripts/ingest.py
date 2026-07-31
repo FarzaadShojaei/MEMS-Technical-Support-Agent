@@ -18,9 +18,9 @@ import fitz  # PyMuPDF
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.config import settings  # noqa: E402
-from app.rag import store  # noqa: E402
-from app.rag.chunking import Chunk, chunk_text  # noqa: E402
+from app.config import settings
+from app.rag import store
+from app.rag.chunking import Chunk, chunk_text
 
 TEXT_SUFFIXES = {".md", ".txt", ".c", ".h"}
 
@@ -53,7 +53,10 @@ def main() -> None:
         print(f"Reset index at {settings.index_dir}")
 
     raw = Path(settings.raw_data_dir)
-    files = [p for p in sorted(raw.glob("*")) if p.suffix.lower() == ".pdf" or p.suffix.lower() in TEXT_SUFFIXES]
+    files = [
+        p for p in sorted(raw.glob("*"))
+        if p.suffix.lower() == ".pdf" or p.suffix.lower() in TEXT_SUFFIXES
+    ]
     if not files:
         print(f"No ingestable files found in {raw}/ — put the datasheet PDF there first.")
         sys.exit(1)
@@ -65,7 +68,10 @@ def main() -> None:
         total += n
         print(f"  {path.name}: {n} chunks")
 
-    print(f"Done. {total} chunks indexed ({store.count()} total in collection '{settings.collection_name}').")
+    print(
+        f"Done. {total} chunks indexed "
+        f"({store.count()} total in collection '{settings.collection_name}')."
+    )
 
 
 if __name__ == "__main__":

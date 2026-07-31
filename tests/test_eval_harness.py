@@ -36,7 +36,7 @@ from eval.run_eval import (
     [
         ("0.55 mA", "0.55mA"),
         ("0.55 mA", "0.55\u2009mA"),  # thin space, common in PDF extraction
-        ("-40 to +85", "−40 to +85"),  # unicode minus vs hyphen
+        ("-40 to +85", "\u221240 to +85"),  # U+2212 minus vs ASCII hyphen
         ("±2/±4/±8/±16 g", "2 4 8 16g"),
         ("WHO_AM_I", "who am i"),
     ],

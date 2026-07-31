@@ -37,9 +37,9 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.config import settings  # noqa: E402
-from app.rag import store  # noqa: E402
-from app.rag.generator import _client, build_context, generate_answer  # noqa: E402
+from app.config import settings
+from app.rag import store
+from app.rag.generator import _client, build_context, generate_answer
 
 GOLDEN_PATH = Path(__file__).parent / "golden_set.yaml"
 
@@ -114,7 +114,11 @@ def _judge(prompt: str) -> dict:
         start, end = raw.index("{"), raw.rindex("}") + 1
         return json.loads(raw[start:end])
     except (ValueError, json.JSONDecodeError):
-        return {"correct": None, "faithful": None, "reason": f"judge output unparseable: {raw[:80]}"}
+        return {
+            "correct": None,
+            "faithful": None,
+            "reason": f"judge output unparseable: {raw[:80]}",
+        }
 
 
 # Categories whose ground truth is an exact string (value / register / address /
@@ -241,7 +245,11 @@ def run(limit: int | None, retrieval_only: bool, top_k: int) -> dict:
 def summarize(results: list[dict], top_k: int) -> dict:
     scorable = [r for r in results if r["retrieval_hit"] is not None]
     hits = [r for r in scorable if r["retrieval_hit"]]
-    mrr = statistics.mean([1 / r["retrieval_rank"] for r in hits] + [0] * (len(scorable) - len(hits))) if scorable else 0.0
+    if scorable:
+        reciprocals = [1 / r["retrieval_rank"] for r in hits] + [0] * (len(scorable) - len(hits))
+        mrr = statistics.mean(reciprocals)
+    else:
+        mrr = 0.0
 
     graded = [r for r in results if r.get("correct") is not None]
     correct = [r for r in graded if r["correct"]]
@@ -273,7 +281,9 @@ def summarize(results: list[dict], top_k: int) -> dict:
         cat_correct = [r for r in cat_graded if r["correct"]]
         summary["by_category"][cat] = {
             "n": len(rows),
-            "retrieval_hit_rate": round(len(cat_hits) / len(cat_scorable), 2) if cat_scorable else None,
+            "retrieval_hit_rate": (
+                round(len(cat_hits) / len(cat_scorable), 2) if cat_scorable else None
+            ),
             "correctness": round(len(cat_correct) / len(cat_graded), 2) if cat_graded else None,
         }
     return summary
@@ -287,7 +297,10 @@ def print_scorecard(s: dict) -> None:
     hit_key = f"hit@{s['top_k']}"
     print(f"Retrieval   {hit_key}: {r[hit_key]}   MRR: {r['mrr']}   ({r['scorable']} scorable)")
     if a["graded"]:
-        print(f"Answers     correctness: {a['correctness']}   faithfulness: {a['faithfulness']}   ({a['graded']} graded)")
+        print(
+            f"Answers     correctness: {a['correctness']}   "
+            f"faithfulness: {a['faithfulness']}   ({a['graded']} graded)"
+        )
     print("-" * 62)
     print(f"{'category':<14}{'n':>3}{'retrieval':>12}{'correct':>10}")
     for cat, v in s["by_category"].items():
@@ -327,7 +340,11 @@ def check_gate(summary: dict, thresholds: dict) -> list[dict]:
         if not cat_summary:
             continue
         add(f"{cat}.correctness", cat_summary.get("correctness"), cat_th.get("correctness"))
-        add(f"{cat}.retrieval", cat_summary.get("retrieval_hit_rate"), cat_th.get("retrieval_hit_rate"))
+        add(
+            f"{cat}.retrieval",
+            cat_summary.get("retrieval_hit_rate"),
+            cat_th.get("retrieval_hit_rate"),
+        )
 
     return checks
 
