@@ -1,0 +1,13 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+# Explicit rule set so local and CI agree regardless of ruff version.
+select = ["E", "F", "I", "W", "UP", "B", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# These files must call sys.path.insert(...) before importing local modules,
+# so imports legitimately aren't at the top. E402 is suppressed for them only.
+"scripts/*.py" = ["E402"]
+"eval/run_eval.py" = ["E402"]
