@@ -31,7 +31,11 @@ def query(text: str, top_k: int | None = None) -> list[dict]:
     res = col.query(query_embeddings=[embed_query(text)], n_results=top_k or settings.top_k)
     out = []
     for chunk_id, doc, meta, dist in zip(
-        res["ids"][0], res["documents"][0], res["metadatas"][0], res["distances"][0]
+        res["ids"][0],
+        res["documents"][0],
+        res["metadatas"][0],
+        res["distances"][0],
+        strict=True,
     ):
         out.append(
             {

@@ -35,7 +35,9 @@ def chunk_text(text: str, source: str, page: int, chunk_size: int, overlap: int)
                     break
         piece = text[start:end].strip()
         if piece:
-            chunks.append(Chunk(text=piece, source=source, page=page, chunk_id=f"{source}:{page}:{n}"))
+            chunks.append(
+                Chunk(text=piece, source=source, page=page, chunk_id=f"{source}:{page}:{n}")
+            )
             n += 1
         if end >= len(text):
             break

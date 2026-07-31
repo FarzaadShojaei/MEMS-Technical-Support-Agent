@@ -1,4 +1,4 @@
-.PHONY: install run ingest test lint
+.PHONY: install run ingest test lint eval gate logs
 
 install:
 	pip install -r requirements.txt
@@ -13,4 +13,14 @@ test:
 	pytest -q
 
 lint:
-	ruff check app scripts tests
+	ruff check app scripts tests eval
+
+eval:
+	python eval/run_eval.py
+
+# Tier 2 quality gate — run this BEFORE pushing. Exits 1 on regression.
+gate:
+	python eval/run_eval.py --gate
+
+logs:
+	python scripts/log_stats.py

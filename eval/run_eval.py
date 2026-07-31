@@ -37,9 +37,9 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.config import settings  # noqa: E402
-from app.rag import store  # noqa: E402
-from app.rag.generator import _client, build_context, generate_answer  # noqa: E402
+from app.config import settings
+from app.rag import store
+from app.rag.generator import _client, build_context, generate_answer
 
 GOLDEN_PATH = Path(__file__).parent / "golden_set.yaml"
 
@@ -114,7 +114,11 @@ def _judge(prompt: str) -> dict:
         start, end = raw.index("{"), raw.rindex("}") + 1
         return json.loads(raw[start:end])
     except (ValueError, json.JSONDecodeError):
-        return {"correct": None, "faithful": None, "reason": f"judge output unparseable: {raw[:80]}"}
+        return {
+            "correct": None,
+            "faithful": None,
+            "reason": f"judge output unparseable: {raw[:80]}",
+        }
 
 
 # Categories whose ground truth is an exact string (value / register / address /
@@ -241,7 +245,11 @@ def run(limit: int | None, retrieval_only: bool, top_k: int) -> dict:
 def summarize(results: list[dict], top_k: int) -> dict:
     scorable = [r for r in results if r["retrieval_hit"] is not None]
     hits = [r for r in scorable if r["retrieval_hit"]]
-    mrr = statistics.mean([1 / r["retrieval_rank"] for r in hits] + [0] * (len(scorable) - len(hits))) if scorable else 0.0
+    if scorable:
+        reciprocals = [1 / r["retrieval_rank"] for r in hits] + [0] * (len(scorable) - len(hits))
+        mrr = statistics.mean(reciprocals)
+    else:
+        mrr = 0.0
 
     graded = [r for r in results if r.get("correct") is not None]
     correct = [r for r in graded if r["correct"]]
@@ -273,7 +281,9 @@ def summarize(results: list[dict], top_k: int) -> dict:
         cat_correct = [r for r in cat_graded if r["correct"]]
         summary["by_category"][cat] = {
             "n": len(rows),
-            "retrieval_hit_rate": round(len(cat_hits) / len(cat_scorable), 2) if cat_scorable else None,
+            "retrieval_hit_rate": (
+                round(len(cat_hits) / len(cat_scorable), 2) if cat_scorable else None
+            ),
             "correctness": round(len(cat_correct) / len(cat_graded), 2) if cat_graded else None,
         }
     return summary
@@ -287,7 +297,10 @@ def print_scorecard(s: dict) -> None:
     hit_key = f"hit@{s['top_k']}"
     print(f"Retrieval   {hit_key}: {r[hit_key]}   MRR: {r['mrr']}   ({r['scorable']} scorable)")
     if a["graded"]:
-        print(f"Answers     correctness: {a['correctness']}   faithfulness: {a['faithfulness']}   ({a['graded']} graded)")
+        print(
+            f"Answers     correctness: {a['correctness']}   "
+            f"faithfulness: {a['faithfulness']}   ({a['graded']} graded)"
+        )
     print("-" * 62)
     print(f"{'category':<14}{'n':>3}{'retrieval':>12}{'correct':>10}")
     for cat, v in s["by_category"].items():
@@ -297,12 +310,81 @@ def print_scorecard(s: dict) -> None:
     print("=" * 62)
 
 
+def check_gate(summary: dict, thresholds: dict) -> list[dict]:
+    """Compare a summary against threshold floors.
+
+    Returns one row per checked metric: {metric, value, floor, passed}.
+    A metric that wasn't measured (e.g. correctness on a --retrieval-only run)
+    is skipped rather than failed — absence of data is not a regression.
+    """
+    checks: list[dict] = []
+    hit_key = f"hit@{summary['top_k']}"
+
+    def add(name: str, value, floor) -> None:
+        if value is None or floor is None:
+            return
+        checks.append(
+            {"metric": name, "value": value, "floor": floor, "passed": value >= floor}
+        )
+
+    r_th = thresholds.get("retrieval") or {}
+    add(hit_key, summary["retrieval"].get(hit_key), r_th.get("hit_at_k"))
+    add("mrr", summary["retrieval"].get("mrr"), r_th.get("mrr"))
+
+    a_th = thresholds.get("answers") or {}
+    add("correctness", summary["answers"].get("correctness"), a_th.get("correctness"))
+    add("faithfulness", summary["answers"].get("faithfulness"), a_th.get("faithfulness"))
+
+    for cat, cat_th in (thresholds.get("by_category") or {}).items():
+        cat_summary = summary["by_category"].get(cat)
+        if not cat_summary:
+            continue
+        add(f"{cat}.correctness", cat_summary.get("correctness"), cat_th.get("correctness"))
+        add(
+            f"{cat}.retrieval",
+            cat_summary.get("retrieval_hit_rate"),
+            cat_th.get("retrieval_hit_rate"),
+        )
+
+    return checks
+
+
+def print_gate(checks: list[dict]) -> bool:
+    """Print the gate table. Returns True if every check passed."""
+    print("\n" + "=" * 62)
+    print("QUALITY GATE")
+    print("=" * 62)
+    if not checks:
+        print("No metrics to check (nothing measured).")
+        return True
+    print(f"{'metric':<26}{'value':>9}{'floor':>9}{'result':>12}")
+    for c in checks:
+        status = "PASS" if c["passed"] else "FAIL <<<"
+        print(f"{c['metric']:<26}{c['value']:>9}{c['floor']:>9}{status:>12}")
+    failed = [c for c in checks if not c["passed"]]
+    print("-" * 62)
+    if failed:
+        print(f"GATE FAILED — {len(failed)} of {len(checks)} metric(s) below floor.")
+        print("Quality regressed. Fix it, or if the drop is intentional and")
+        print("justified, update eval/thresholds.yaml in the same commit.")
+    else:
+        print(f"GATE PASSED — all {len(checks)} metric(s) at or above floor.")
+    print("=" * 62)
+    return not failed
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--retrieval-only", action="store_true", help="skip LLM calls (fast)")
     p.add_argument("--limit", type=int, default=None)
     p.add_argument("--top-k", type=int, default=settings.top_k)
     p.add_argument("--out", type=str, default="eval/last_report.json")
+    p.add_argument(
+        "--gate",
+        action="store_true",
+        help="enforce eval/thresholds.yaml; exit 1 if any metric is below its floor",
+    )
+    p.add_argument("--thresholds", type=str, default="eval/thresholds.yaml")
     args = p.parse_args()
 
     if store.count() == 0:
@@ -316,6 +398,18 @@ def main() -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"\nFull report written to {out}")
+
+    if args.gate:
+        th_path = Path(args.thresholds)
+        if not th_path.exists():
+            print(f"Thresholds file not found: {th_path}")
+            sys.exit(2)
+        thresholds = yaml.safe_load(th_path.read_text(encoding="utf-8"))
+        checks = check_gate(summary, thresholds)
+        summary["gate"] = checks
+        out.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+        if not print_gate(checks):
+            sys.exit(1)
 
 
 if __name__ == "__main__":

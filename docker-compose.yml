@@ -1,10 +1,22 @@
 services:
   api:
     build: .
+    image: mems-support-agent:latest
     ports:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      # IMPORTANT: inside the container, "localhost" is the container itself,
+      # not your machine — so Ollama on the host is NOT at localhost:11434.
+      # This override points the container at the host instead.
+      # Remove it if you run against a hosted LLM (OpenAI etc.) via .env.
+      - LLM_BASE_URL=http://host.docker.internal:11434/v1
+    extra_hosts:
+      # Makes host.docker.internal resolve on Linux too (it already works on
+      # Docker Desktop for Windows/Mac).
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
+    restart: unless-stopped

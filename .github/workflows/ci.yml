@@ -4,6 +4,24 @@ on:
   push:
   pull_request:
 
+# Two-tier quality gating.
+#
+# The full golden-set eval cannot run on a GitHub runner: it needs a local LLM
+# (Ollama), the built vector index, and the ST datasheet — none of which are in
+# the repo (the datasheet is ST's copyrighted document and stays out by design).
+#
+# So the gate is split:
+#   Tier 1 (here, every push)  — unit-test the *grader itself*, so the thing
+#                                that measures quality can't silently break.
+#   Tier 2 (local, pre-push)   — the real quality gate:
+#                                `python eval/run_eval.py --gate`
+#                                exits 1 if any metric drops below its floor
+#                                in eval/thresholds.yaml.
+#
+# Tier 1 is what CI can honestly enforce. Tier 2 is enforced by the developer
+# before pushing, and its report (eval/last_report.json) is committed so the
+# quality history is reviewable in the diff.
+
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
@@ -19,10 +37,70 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Lint
-        run: ruff check app scripts tests
+        run: ruff check app scripts tests eval
 
-      - name: Tests
+      - name: Unit tests (app + eval harness)
         run: pytest -q
 
-  # Phase 3 will add an `eval` job here that runs the golden-set harness
-  # and fails the build if quality metrics drop below threshold.
+  eval-gate:
+    # Tier 1: the grader's own regression suite. If these fail, every quality
+    # number the project reports is suspect — so this blocks the build.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Validate golden set is well-formed
+        run: |
+          python - <<'PY'
+          import sys, yaml
+          entries = yaml.safe_load(open("eval/golden_set.yaml", encoding="utf-8"))
+          required = {"id", "category", "question", "expected_answer"}
+          ids = set()
+          problems = []
+          for e in entries:
+              missing = required - e.keys()
+              if missing:
+                  problems.append(f"{e.get('id','<no id>')}: missing {missing}")
+              if e["id"] in ids:
+                  problems.append(f"duplicate id: {e['id']}")
+              ids.add(e["id"])
+              # exact-value categories must be deterministically gradable
+              if e["category"] in {"factual", "register", "conditional", "pointer"}:
+                  if not e.get("answer_must_contain"):
+                      problems.append(f"{e['id']}: needs answer_must_contain")
+          if problems:
+              print("Golden set problems:")
+              [print(" -", p) for p in problems]
+              sys.exit(1)
+          print(f"Golden set OK: {len(entries)} entries, {len(ids)} unique ids")
+          PY
+
+      - name: Grader regression suite
+        run: pytest tests/test_eval_harness.py -q
+
+      - name: Enforce committed thresholds against last report
+        # If eval/last_report.json is committed, re-check it against the current
+        # thresholds. This catches the case where someone lowers a threshold
+        # without a matching quality improvement — the ratchet only moves up.
+        run: |
+          python - <<'PY'
+          import json, sys, pathlib, yaml
+          report = pathlib.Path("eval/last_report.json")
+          if not report.exists():
+              print("No committed report — skipping (run `--gate` locally).")
+              sys.exit(0)
+          sys.path.insert(0, ".")
+          from eval.run_eval import check_gate, print_gate
+          summary = json.loads(report.read_text(encoding="utf-8"))
+          thresholds = yaml.safe_load(open("eval/thresholds.yaml", encoding="utf-8"))
+          if not print_gate(check_gate(summary, thresholds)):
+              sys.exit(1)
+          PY

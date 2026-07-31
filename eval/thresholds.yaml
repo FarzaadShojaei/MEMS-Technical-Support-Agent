@@ -1,0 +1,35 @@
+# Regression-gate thresholds.
+#
+# Derived from the Phase 2 baseline (24 entries, top_k=5, llama3.1:8b):
+#     hit@5 0.476 | MRR 0.317 | correctness 0.375 | faithfulness 0.875 | oos 1.00
+#
+# Floors sit slightly BELOW the baseline. Why: metrics graded by an LLM judge
+# are nondeterministic — the same answer can flip verdicts between runs — so a
+# floor set exactly at the baseline would produce flaky builds. Deterministic
+# metrics (retrieval, exact-value correctness) get tight floors because they
+# cannot drift; judged metrics get a wider tolerance band.
+#
+# Raise these after each Phase 4 improvement. The gate is a ratchet: it should
+# only ever move up.
+
+# --- Deterministic metrics: tight floors (pure string/vector ops, no LLM) ---
+retrieval:
+  hit_at_k: 0.45          # baseline 0.476
+  mrr: 0.29               # baseline 0.317
+
+# --- Judged metrics: wider tolerance for judge nondeterminism ---
+answers:
+  correctness: 0.30       # baseline 0.375
+  faithfulness: 0.75      # baseline 0.875
+
+# --- Per-category floors: catch regressions the aggregate would hide ---
+# A fix that raises overall correctness while silently breaking refusals is a
+# bad trade. Out-of-scope refusal is the safety-critical behavior here, so it
+# gets the strictest floor of all.
+by_category:
+  out_of_scope:
+    correctness: 1.0      # never regress: refusing is the safety property
+  register:
+    correctness: 0.40     # baseline 0.50
+  factual:
+    correctness: 0.35     # baseline 0.44

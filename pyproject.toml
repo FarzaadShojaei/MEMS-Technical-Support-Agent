@@ -1,0 +1,15 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+# Explicit rule selection so local and CI lint identically regardless of the
+# installed ruff version — the source of the "passes locally, fails in CI" drift.
+select = ["E", "F", "I", "W", "UP", "B", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# These modules must run sys.path.insert(...) before importing local packages,
+# so their imports legitimately are not at the top of the file. Scope E402 to
+# them rather than sprinkling per-line noqa directives.
+"scripts/*.py" = ["E402"]
+"eval/run_eval.py" = ["E402"]

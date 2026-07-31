@@ -1,0 +1,25 @@
+# Keep the build context tiny and fast. Without this, Docker ships your entire
+# folder to the daemon on every build — including the venv, the datasheet PDF,
+# the vector index, and .git, none of which belong in the image.
+
+.git
+.gitignore
+.github/
+
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Runtime data & logs are bind-mounted, never baked in
+data/
+logs/
+
+# Secrets and local config
+.env
+
+# Docs & tests aren't needed at runtime
+*.md
+tests/
