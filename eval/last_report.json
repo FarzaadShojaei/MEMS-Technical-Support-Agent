@@ -3,8 +3,8 @@
   "n": 24,
   "retrieval": {
     "scorable": 21,
-    "hit@5": 0.476,
-    "mrr": 0.317
+    "hit@5": 0.524,
+    "mrr": 0.369
   },
   "answers": {
     "graded": 24,
@@ -24,7 +24,7 @@
     },
     "factual": {
       "n": 9,
-      "retrieval_hit_rate": 0.33,
+      "retrieval_hit_rate": 0.44,
       "correctness": 0.44
     },
     "out_of_scope": {
@@ -61,7 +61,7 @@
       "correct_reason": "missing required token(s): ['6Ch']",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 17.2
+      "latency_s": 52.3
     },
     {
       "id": "fact-accel-fs",
@@ -75,7 +75,7 @@
       "correct_reason": "missing required token(s): ['16g']",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 27.0
+      "latency_s": 23.4
     },
     {
       "id": "fact-gyro-fs",
@@ -89,7 +89,7 @@
       "correct_reason": "missing required token(s): ['2000dps']",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 37.6
+      "latency_s": 32.7
     },
     {
       "id": "fact-accel-sens-2g",
@@ -103,7 +103,7 @@
       "correct_reason": "missing required token(s): ['0.061']",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 12.8
+      "latency_s": 11.6
     },
     {
       "id": "fact-fifo",
@@ -117,35 +117,35 @@
       "correct_reason": "missing required token(s): ['9kb']",
       "faithful": true,
       "faithful_reason": "The value of 3 KB and the mention of FIFO are present in [2]",
-      "latency_s": 13.2
+      "latency_s": 13.3
     },
     {
       "id": "fact-supply",
       "category": "factual",
       "difficulty": "easy",
       "retrieval_hit": true,
-      "retrieval_rank": 4,
+      "retrieval_rank": 3,
       "answer": "According to [3], Table 3. Electrical characteristics, the analog supply voltage (VDD) range is:\n\n1.71 V to 3.6 V (see [3]).",
       "grader": "deterministic",
       "correct": true,
       "correct_reason": "contains all required: ['1.71', '3.6']",
       "faithful": true,
       "faithful_reason": "The provided voltage range matches Table 3. Electrical characteristics.",
-      "latency_s": 17.9
+      "latency_s": 16.2
     },
     {
       "id": "fact-temp-range",
       "category": "factual",
       "difficulty": "easy",
-      "retrieval_hit": false,
-      "retrieval_rank": null,
+      "retrieval_hit": true,
+      "retrieval_rank": 1,
       "answer": "According to [1], the operating temperature range is -40°C to +85°C (see [1]).",
       "grader": "deterministic",
       "correct": true,
       "correct_reason": "contains all required: ['40', '85']",
       "faithful": true,
       "faithful_reason": "Operating temperature range matches documentation.",
-      "latency_s": 12.9
+      "latency_s": 12.6
     },
     {
       "id": "fact-package",
@@ -159,7 +159,7 @@
       "correct_reason": "contains all required: ['0.83']",
       "faithful": true,
       "faithful_reason": "The package dimensions are mentioned in both [1] and [3]",
-      "latency_s": 17.7
+      "latency_s": 16.5
     },
     {
       "id": "fact-current",
@@ -173,7 +173,7 @@
       "correct_reason": "contains all required: ['0.55']",
       "faithful": true,
       "faithful_reason": "The value of IddHP is correctly stated as 0.55 mA according to Table 3.",
-      "latency_s": 20.4
+      "latency_s": 19.7
     },
     {
       "id": "reg-enable-accel",
@@ -187,7 +187,7 @@
       "correct_reason": "missing required token(s): ['ODR_XL']",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 28.2
+      "latency_s": 28.7
     },
     {
       "id": "reg-enable-gyro",
@@ -201,7 +201,7 @@
       "correct_reason": "contains all required: ['CTRL2_G', 'ODR_G']",
       "faithful": false,
       "faithful_reason": "The answer claims that writing a non-zero value to ODR_G[3:0] activates the gyroscope, but the context only states that it's necessary to write a value to these bits to activate the gyroscope from power-down mode.",
-      "latency_s": 34.2
+      "latency_s": 34.6
     },
     {
       "id": "reg-int1-addr",
@@ -215,7 +215,7 @@
       "correct_reason": "contains all required: ['INT1_CTRL', '0Dh']",
       "faithful": true,
       "faithful_reason": "The register address of INT1_CTRL is correctly identified as 0Dh (12 in decimal).",
-      "latency_s": 32.7
+      "latency_s": 33.1
     },
     {
       "id": "reg-temp-out",
@@ -229,7 +229,7 @@
       "correct_reason": "missing required token(s): ['OUT_TEMP_L']",
       "faithful": false,
       "faithful_reason": "The temperature value is not expressed as two's complement sign extended on the MSB.",
-      "latency_s": 21.0
+      "latency_s": 23.0
     },
     {
       "id": "concept-mlc",
@@ -243,7 +243,7 @@
       "correct_reason": "The agent's answer lacks key facts of the ground truth, such as always-on features and running decision-tree ML models directly on the sensor.",
       "faithful": true,
       "faithful_reason": "All claims are supported by the provided documentation excerpts.",
-      "latency_s": 29.3
+      "latency_s": 31.7
     },
     {
       "id": "concept-fsm-vs-mlc",
@@ -257,7 +257,7 @@
       "correct_reason": "The agent's answer incorrectly states that the machine learning core uses 'logical processing with configurable nodes' and mentions specific algorithms.",
       "faithful": false,
       "faithful_reason": "The answer incorrectly states that the machine learning core uses algorithms such as activity detection like running, walking, driving, etc., which is not mentioned in [2]",
-      "latency_s": 43.9
+      "latency_s": 48.2
     },
     {
       "id": "concept-modes",
@@ -271,7 +271,7 @@
       "correct_reason": "The agent's answer incorrectly states that there is no direct trade-off between power consumption and performance.",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 43.4
+      "latency_s": 48.6
     },
     {
       "id": "proc-read-accel",
@@ -285,7 +285,7 @@
       "correct_reason": "The agent's answer incorrectly states that the acceleration data can be read from OUTZ_L_A and OUTZ_H_A registers, whereas the ground truth specifies OUTX/OUTY/OUTZ registers.",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 38.2
+      "latency_s": 35.4
     },
     {
       "id": "proc-freefall-int",
@@ -299,7 +299,7 @@
       "correct_reason": "The agent's answer incorrectly states that the documentation does not cover routing a free-fall interrupt to INT1.",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 31.0
+      "latency_s": 30.2
     },
     {
       "id": "cond-gyro-sens-2000",
@@ -313,7 +313,7 @@
       "correct_reason": "missing required token(s): ['70', 'mdps']",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 17.7
+      "latency_s": 16.2
     },
     {
       "id": "cond-best-accel-res",
@@ -327,7 +327,7 @@
       "correct_reason": "missing required token(s): ['0.061']",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 17.1
+      "latency_s": 16.6
     },
     {
       "id": "pointer-mlc-an",
@@ -341,7 +341,7 @@
       "correct_reason": "missing required token(s): ['AN5259']",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 12.8
+      "latency_s": 12.0
     },
     {
       "id": "oos-price",
@@ -355,7 +355,7 @@
       "correct_reason": "The agent correctly declined to provide pricing information.",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 10.1
+      "latency_s": 10.5
     },
     {
       "id": "oos-competitor",
@@ -369,7 +369,7 @@
       "correct_reason": "The agent correctly declined to provide a comparison and referenced the documentation.",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 15.7
+      "latency_s": 14.7
     },
     {
       "id": "oos-false-premise",
@@ -383,7 +383,51 @@
       "correct_reason": "The agent correctly declined to provide an out-of-scope answer.",
       "faithful": true,
       "faithful_reason": "refusal makes no factual claims",
-      "latency_s": 10.7
+      "latency_s": 11.0
+    }
+  ],
+  "gate": [
+    {
+      "metric": "hit@5",
+      "value": 0.524,
+      "floor": 0.45,
+      "passed": true
+    },
+    {
+      "metric": "mrr",
+      "value": 0.369,
+      "floor": 0.29,
+      "passed": true
+    },
+    {
+      "metric": "correctness",
+      "value": 0.375,
+      "floor": 0.3,
+      "passed": true
+    },
+    {
+      "metric": "faithfulness",
+      "value": 0.875,
+      "floor": 0.75,
+      "passed": true
+    },
+    {
+      "metric": "out_of_scope.correctness",
+      "value": 1.0,
+      "floor": 1.0,
+      "passed": true
+    },
+    {
+      "metric": "register.correctness",
+      "value": 0.5,
+      "floor": 0.4,
+      "passed": true
+    },
+    {
+      "metric": "factual.correctness",
+      "value": 0.44,
+      "floor": 0.35,
+      "passed": true
     }
   ]
 }

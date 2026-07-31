@@ -16,7 +16,8 @@
   source: Features; Module specifications table
   difficulty: easy
   retrieval_keys:
-  - ±2/±4/±8/±16 g
+  - ±16 g
+  - 16 g
   answer_must_contain:
   - 16g
 - id: fact-gyro-fs
@@ -26,7 +27,8 @@
   source: Features; Module specifications table
   difficulty: easy
   retrieval_keys:
-  - ±125/±250/±500/±1000/±2000
+  - ±2000 dps
+  - 2000 dps
   answer_must_contain:
   - 2000dps
 - id: fact-accel-sens-2g
@@ -56,7 +58,7 @@
   source: Features; Module specifications
   difficulty: easy
   retrieval_keys:
-  - 1.71 V
+  - '1.71'
   answer_must_contain:
   - '1.71'
   - '3.6'
@@ -67,9 +69,8 @@
   source: Module specifications (Top)
   difficulty: easy
   retrieval_keys:
-  - -40 to +85
-  - -40°C to +85°C
-  - -40 °C
+  - '-40'
+  - '+85'
   answer_must_contain:
   - '40'
   - '85'
@@ -90,7 +91,7 @@
   source: Features; Description
   difficulty: easy
   retrieval_keys:
-  - 0.55 mA
+  - '0.55'
   answer_must_contain:
   - '0.55'
 - id: reg-enable-accel
