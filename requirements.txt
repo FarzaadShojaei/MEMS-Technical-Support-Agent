@@ -12,6 +12,7 @@ pyyaml>=6.0
 # Retrieval / vector store
 chromadb>=0.5
 sentence-transformers>=3.0
+rank-bm25>=0.2.2
 
 # LLM client (OpenAI-compatible: works with OpenAI, Ollama, OpenRouter, etc.)
 openai>=1.30

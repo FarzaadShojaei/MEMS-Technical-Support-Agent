@@ -40,6 +40,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.config import settings
 from app.rag import store
 from app.rag.generator import _client, build_context, generate_answer
+from app.rag.retriever import retrieve
 
 GOLDEN_PATH = Path(__file__).parent / "golden_set.yaml"
 
@@ -185,7 +186,7 @@ def run(limit: int | None, retrieval_only: bool, top_k: int) -> dict:
         print(f"[{i}/{len(entries)}] {e['id']} ({e['category']}) ... ", end="", flush=True)
         t0 = time.perf_counter()
 
-        chunks = store.query(e["question"], top_k=top_k)
+        chunks = retrieve(e["question"], top_k=top_k)
         r = eval_retrieval(e, chunks)
 
         row = {
@@ -258,6 +259,7 @@ def summarize(results: list[dict], top_k: int) -> dict:
 
     summary = {
         "top_k": top_k,
+        "retrieval_mode": settings.retrieval_mode,
         "n": len(results),
         "retrieval": {
             "scorable": len(scorable),
@@ -291,7 +293,7 @@ def summarize(results: list[dict], top_k: int) -> dict:
 
 def print_scorecard(s: dict) -> None:
     print("\n" + "=" * 62)
-    print(f"SCORECARD  (n={s['n']}, top_k={s['top_k']})")
+    print(f"SCORECARD  (n={s['n']}, top_k={s['top_k']}, mode={s.get('retrieval_mode', '?')})")
     print("=" * 62)
     r, a = s["retrieval"], s["answers"]
     hit_key = f"hit@{s['top_k']}"

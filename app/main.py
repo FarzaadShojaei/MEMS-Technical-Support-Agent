@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 
 from app.rag import store
 from app.rag.generator import generate_answer
+from app.rag.retriever import retrieve
 
 app = FastAPI(title="MEMS Technical-Support Agent", version="0.1.0")
 
@@ -32,7 +33,8 @@ class SourceOut(BaseModel):
     chunk_id: str
     source: str
     page: int
-    distance: float
+    distance: float | None = None
+    score: float | None = None
     text: str
 
 
@@ -61,7 +63,7 @@ def ask(req: AskRequest) -> AskResponse:
             detail="Index is empty. Run `python scripts/ingest.py` first.",
         )
     t0 = time.perf_counter()
-    chunks = store.query(req.question, top_k=req.top_k)
+    chunks = retrieve(req.question, top_k=req.top_k)
     answer = generate_answer(req.question, chunks)
     latency_ms = int((time.perf_counter() - t0) * 1000)
 

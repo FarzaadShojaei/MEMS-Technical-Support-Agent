@@ -18,6 +18,9 @@ class Settings(BaseSettings):
 
     # --- Retrieval ---
     top_k: int = 5
+    retrieval_mode: str = "hybrid"  # "dense" | "hybrid"
+    rrf_k: int = 60  # Reciprocal Rank Fusion constant (higher = flatter weighting)
+    fusion_pool: int = 20  # depth pulled from each retriever before fusing
 
     # --- LLM (any OpenAI-compatible endpoint) ---
     # OpenAI:      base_url=https://api.openai.com/v1   llm_api_key=sk-...
