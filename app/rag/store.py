@@ -49,5 +49,17 @@ def query(text: str, top_k: int | None = None) -> list[dict]:
     return out
 
 
+def all_chunks() -> list[dict]:
+    """Return every stored chunk (no embeddings) for building a lexical index.
+
+    Shape matches query() minus 'distance': {chunk_id, text, source, page}.
+    """
+    res = _collection().get()  # ids + documents + metadatas, no vectors
+    return [
+        {"chunk_id": cid, "text": doc, "source": meta["source"], "page": meta["page"]}
+        for cid, doc, meta in zip(res["ids"], res["documents"], res["metadatas"], strict=True)
+    ]
+
+
 def count() -> int:
     return _collection().count()
