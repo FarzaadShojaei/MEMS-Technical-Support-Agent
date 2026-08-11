@@ -9,3 +9,5 @@ data/raw/*.pdf
 logs/
 .pytest_cache/
 .ruff_cache/
+frontend/node_modules/
+frontend/.env.example

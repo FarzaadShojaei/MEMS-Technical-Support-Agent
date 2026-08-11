@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     rrf_k: int = 60  # Reciprocal Rank Fusion constant (higher = flatter weighting)
     fusion_pool: int = 20  # depth pulled from each retriever before fusing
 
+    # --- CORS (for a separately-hosted frontend) ---
+    cors_origins: str = "*"  # comma-separated allowlist, or "*"
+
     # --- LLM (any OpenAI-compatible endpoint) ---
     # OpenAI:      base_url=https://api.openai.com/v1   llm_api_key=sk-...
     # Ollama:      base_url=http://localhost:11434/v1   llm_api_key=ollama

@@ -13,15 +13,35 @@ import time
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from app.config import settings
 from app.rag import store
 from app.rag.generator import generate_answer
 from app.rag.retriever import retrieve
 
 app = FastAPI(title="MEMS Technical-Support Agent", version="0.1.0")
 
+# Allow a separately-hosted frontend (e.g. a React app on Vercel) to call the
+# API. Set CORS_ORIGINS to a comma-separated allowlist in production; defaults
+# to "*" for easy local/demo use.
+_origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+STATIC_DIR = Path(__file__).parent / "static"
 LOG_PATH = Path("logs/requests.jsonl")
+
+
+@app.get("/", include_in_schema=False)
+def index() -> FileResponse:
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 class AskRequest(BaseModel):
