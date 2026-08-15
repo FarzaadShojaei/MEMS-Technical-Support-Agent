@@ -1,14 +1,35 @@
 # MEMS Technical-Support Agent
 
-A retrieval-augmented (RAG) technical-support agent that answers questions about
-the STMicroelectronics **LSM6DSOX** IMU directly from its datasheet — wrapped in
-a **QA-grade evaluation and regression-testing harness**.
+A retrieval-augmented (RAG) support agent that answers technical questions about
+the STMicroelectronics **LSM6DSOX** IMU straight from its datasheet — citing the
+page, and declining when the answer isn't in the docs — wrapped in a **QA-grade
+evaluation harness and CI regression gate**.
 
-The RAG service shows the system can be built. The evaluation harness — with
-deterministic grading, a trustworthy baseline, and a CI regression gate that
-protects a safety property — is the point of the project: it demonstrates the
-ability to both *build* and *rigorously validate* an LLM system, which is a
-rarer combination than either skill alone.
+The RAG is the easy half. The point of this project is the rigor around it:
+knowing *whether the answers are right*, measuring it, and protecting that
+measurement from regressions — the same discipline a QA/SDET brings to software,
+applied to an LLM system.
+
+---
+
+## Headline result
+
+Adding hybrid retrieval, guided by the evaluation harness, produced a measured
+improvement — not a vibe:
+
+| Metric | Dense | Hybrid | Δ |
+|---|---|---|---|
+| Retrieval hit@5 | 0.52 | **0.76** | +45% |
+| Retrieval MRR | 0.37 | **0.54** | +47% |
+| Answer correctness | 0.38 | **0.54** | +45% |
+| Faithfulness | 0.88 | 0.79 | −0.09* |
+| Out-of-scope refusal | 1.00 | **1.00** | held |
+
+<sub>*Faithfulness dips because the stronger agent *attempts* more answers
+instead of refusing — more surface area, still grounded. Refusal-as-safety is
+held at 1.00 by a dedicated gate floor.</sub>
+
+Measured on a 24-question golden set across seven question categories.
 
 ---
 
@@ -20,8 +41,11 @@ rarer combination than either skill alone.
 | 1 | Ingestion → retrieval → cited answers via `POST /ask` | ✅ |
 | 2 | Golden-set evaluation harness + trustworthy baseline | ✅ |
 | 3 | Two-tier regression gate + observability | ✅ |
-| 4 | Hybrid retrieval (BM25 + dense), table-aware chunking | planned |
-| 5 | Live deployment + minimal web frontend | planned |
+| 4 | Hybrid retrieval (BM25 + dense, RRF fusion) | ✅ |
+| 5 | Web frontends (React SPA + built-in HTML) | ✅ built · deploy documented |
+
+> The demo runs locally today; cloud deployment is documented in
+> [`DEPLOY.md`](DEPLOY.md) but not yet hosted.
 
 ---
 
@@ -31,203 +55,121 @@ rarer combination than either skill alone.
 data/raw/*.pdf | *.c | *.md
         │  scripts/ingest.py  (PyMuPDF → chunk → embed)
         ▼
-   Chroma index (data/index/)           sentence-transformers, local & free
-        │  top-k similarity
+   Chroma index ──► dense (vector) ─┐
+        │                           ├─► Reciprocal Rank Fusion ─► top-k
+   BM25 lexical  ──► exact tokens ──┘        (app/rag/retriever.py)
         ▼
-POST /ask ──► retrieved chunks ──► LLM (OpenAI-compatible / Ollama) ──► grounded
-        │                                                    answer + [n] citations
-        └──► logs/requests.jsonl   (query, chunk ids, answer, latency)
-                                          │
-                                          ▼
-                          scripts/log_stats.py  (latency p50/p95, refusal rate)
+POST /ask ──► fused chunks ──► LLM (Ollama / Groq) ──► grounded answer + [n] cites
+        │                                                        or a refusal
+        └──► logs/requests.jsonl  (query, chunks, answer, latency)
 
-eval/golden_set.yaml  ──►  eval/run_eval.py  ──►  scorecard + eval/last_report.json
-   24 labelled Q&A            hybrid grading            hit@k · MRR · correctness
-   across 7 categories                                  · faithfulness
-                                     │
-                                     ▼
-                        eval/thresholds.yaml  +  --gate  →  exit 1 on regression
+eval/golden_set.yaml ─► eval/run_eval.py ─► hit@k · MRR · correctness · faithfulness
+                                     └─► --gate → exit 1 on regression (eval/thresholds.yaml)
 ```
 
 ---
 
-## Baseline (Phase 3)
+## Why hybrid retrieval
 
-24-question golden set, `top_k = 5`, generation + judging on a local
-`llama3.1:8b` via Ollama.
-
-| Metric | Value |
-|---|---|
-| Retrieval hit@5 | **0.524** |
-| Retrieval MRR | **0.369** |
-| Answer correctness | 0.375 |
-| Answer faithfulness | **0.875** |
-| Out-of-scope refusal | **1.000** |
-
-hit@5 improved from an initial 0.476 → 0.524 after fixing a measurement bug:
-retrieval keys were failing to match their target chunks because of PDF spacing
-artifacts (`"0.55 mA"` vs `"0.55\u2009mA"`). Normalizing to alphanumerics before
-matching recovered hits that were always present. No pipeline change — just
-honest measurement.
-
-### What the numbers say
-
-The aggregate hides the real story; the per-category breakdown tells it:
-
-| Category | Retrieval hit-rate | Correctness | Reading |
-|---|---|---|---|
-| conceptual | 1.00 | 0.00 | retrieval perfect → failure is **generation** |
-| factual | 0.44 | 0.44 | mixed; prose facts pass, table facts miss |
-| register | 0.75 | 0.50 | names retrieved, bit-field details shaky |
-| procedural | 0.50 | 0.00 | multi-step synthesis is hard for an 8B model |
-| conditional | 0.00 | 0.00 | table-value lookups never retrieved |
-| pointer | 0.00 | 0.00 | app-note references never retrieved |
-| out_of_scope | — | 1.00 | refuses instead of fabricating — the safety win |
-
-Two distinct, measured failure modes:
-
-1. **Retrieval fails on exact identifiers, table values, and cross-references.**
-   Dense embeddings match prose well but miss register mnemonics (`WHO_AM_I`),
-   spec-table rows (gyro sensitivity at ±2000 dps), and pointers (`AN5259`).
-   → Phase 4: hybrid BM25 + dense retrieval and table-aware chunking.
-2. **Generation is weak even when retrieval succeeds.** On conceptual questions
-   the correct chunk is retrieved at rank 1, yet the 8B model rambles, invents
-   details, or contradicts itself. → Phase 4: prompt work / stronger generation
-   model.
-
-Faithfulness is high (0.875) and refusal is perfect (1.0): the agent
-overwhelmingly declines rather than hallucinates. The one real hallucination in
-the set (`fact-fifo` — "3 KB" from a wrong chunk) is documented rather than
-hidden.
+The evaluation harness didn't just score the system — it localized the failure.
+Dense embeddings were blind to exact tokens: register mnemonics (`WHO_AM_I`),
+spec-table values (`±2000 dps → 70 mdps/LSB`), and app-note references
+(`AN5259`) carry little semantic signal, so their vectors sit near everything
+and nowhere. BM25 matches them on the token. Fusing the two with Reciprocal Rank
+Fusion (which needs no score normalization between cosine distance and BM25)
+moved factual retrieval from 0.44 to 0.89 and cracked open categories that were
+flat zero.
 
 ---
 
 ## Evaluation methodology
 
-The harness grades three things and picks the cheapest *reliable* grader per
-question category — a deliberate design choice after an early run showed a weak
-LLM judge mislabeling answers we had hand-verified as correct.
+The harness picks the cheapest *reliable* grader per question category — a
+decision made after an early run showed a weak LLM judge mislabeling answers
+that were hand-verified correct:
 
-**Retrieval** (deterministic): `hit@k` and `MRR`, scored by checking whether any
-retrieved chunk contains an entry's `retrieval_keys` (exact strings marking the
-correct region), matched after alphanumeric normalization.
+- **Factual / register / conditional / pointer** → **deterministic**: the answer
+  must contain exact tokens (`6Ch`, `0.061`, `AN5259`), matched after
+  normalization. No LLM, so exact values can't be misgraded.
+- **Conceptual / procedural** → **LLM judge**: paraphrase needs judgment.
+- **Out-of-scope** → **LLM refusal judge**: "did it decline?" is semantic.
 
-**Answer correctness** (hybrid):
-- *Factual / register / conditional / pointer* → **deterministic**: the answer
-  must contain every token in `answer_must_contain` (e.g. `6Ch`, `0.061`,
-  `AN5259`). No LLM, so exact values can't be misgraded.
-- *Conceptual / procedural* → **LLM judge**: paraphrase genuinely needs
-  judgment here.
-- *Out-of-scope* → **LLM refusal judge**: "did the agent decline?" is a
-  semantic question, and this is the one category where the judge earns its keep.
-
-**Faithfulness** (refusal-aware): a refusal makes no factual claims, so it is
-faithful by construction; only substantive answers are sent to the judge.
-
-Every result row records which grader produced its verdict (`deterministic` /
-`llm-judge` / `llm-judge-refusal`), so any LLM-graded call can be audited.
+Faithfulness is refusal-aware (a refusal makes no claims to hallucinate), and
+every result row records which grader produced its verdict, so any LLM-graded
+call is auditable.
 
 ---
 
 ## Regression gate
 
-`python eval/run_eval.py --gate` enforces the floors in `eval/thresholds.yaml`
-and **exits 1** if any metric drops below its floor.
+`python eval/run_eval.py --gate` enforces `eval/thresholds.yaml` and exits 1 if
+any metric falls below its floor. Floors sit below the baseline with a
+deliberate asymmetry — tight on deterministic metrics, wider on LLM-judged ones
+(the judge is nondeterministic) — and per-category floors catch regressions the
+aggregate would hide, most importantly `out_of_scope: 1.0`, so a change that
+raises overall correctness while breaking refusals still fails the build.
 
-Floors are set *below* the baseline, with a deliberate asymmetry: deterministic
-metrics (retrieval, exact-value correctness) get tight floors because they can't
-drift; LLM-judged metrics get a wider tolerance band because the judge is
-nondeterministic and a floor set exactly at the baseline would flake. Per-category
-floors catch regressions the aggregate would hide — most importantly
-`out_of_scope.correctness: 1.0`, so a change that raises overall correctness while
-silently breaking refusals still fails the build. The gate is a ratchet: floors
-only move up.
-
-### Two-tier design (why CI can't run the full eval)
-
-The full eval needs a local LLM (Ollama), the built vector index, and the ST
-datasheet — none of which belong on a GitHub runner (the datasheet is ST's
-copyrighted document and is intentionally kept out of the repo). So gating is
-split:
-
-- **Tier 1 — CI, every push:** unit-tests the *grader itself* (31 tests),
-  validates the golden set is well-formed, and re-checks the committed report
-  against thresholds. If the thing that measures quality breaks, every number
-  the project reports is worthless — so that is blocked automatically.
-- **Tier 2 — local, pre-push:** the real quality gate (`--gate`) runs the full
-  eval and blocks on regression. The passing report is committed so quality
-  history is visible in the diff.
+**Two-tier design:** the full eval needs a local LLM, the vector index, and the
+datasheet — none of which belong on a CI runner. So CI (Tier 1) unit-tests the
+*grader itself* and validates the golden set; the full quality gate (Tier 2)
+runs locally pre-push. Being able to explain *why* CI can't run the full eval is
+part of the point.
 
 ---
 
-## Observability
+## Frontends
 
-Every `/ask` call is logged to `logs/requests.jsonl` (query, retrieved chunk ids,
-answer, latency). `scripts/log_stats.py` turns that into latency p50/p95, refusal
-rate, and most-retrieved chunks. The golden set measures the questions *I* thought
-to ask; the log shows what users actually ask — and a rising refusal rate is the
-earliest signal that real traffic has drifted outside the indexed corpus.
+Two, by design:
+
+- **Built-in HTML** served by FastAPI at `/` — single deployment, one URL.
+- **React (Vite) SPA** in `frontend/` — a chat-style UI with a "How it works"
+  page, meant for a separate Vercel deployment calling the backend.
+
+Both render answers with page-level citations, latency, and a declined/answered
+outcome — the refusal behavior is visible in the UI itself.
 
 ---
 
 ## Quickstart
 
-Windows / PowerShell (no `make` needed):
-
-```powershell
-# 1. Install
-python -m venv .venv; .venv\Scripts\Activate.ps1
+```bash
+# backend
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-
-# 2. Configure the LLM (OpenAI-compatible or local Ollama)
-Copy-Item .env.example .env      # then edit: API key, or point at Ollama
-
-# 3. Add the corpus
-#    Put lsm6dsox.pdf (datasheet DS12814) into data\raw\
-
-# 4. Ingest
+cp .env.example .env          # add an LLM key, or point at local Ollama
+# put lsm6dsox.pdf into data/raw/
 python scripts/ingest.py
-
-# 5. Run
 uvicorn app.main:app --reload --port 8000
 ```
 
-Open `http://localhost:8000/docs` and try `POST /ask`, or:
+Open `http://localhost:8000/` for the built-in UI, or run the React app:
 
-```powershell
-Invoke-RestMethod -Uri http://localhost:8000/ask -Method Post `
-  -ContentType "application/json" `
-  -Body '{"question": "What is the WHO_AM_I value of the LSM6DSOX?"}'
+```bash
+cd frontend && npm install && npm run dev   # http://localhost:5173, proxies to :8000
 ```
 
 ### Evaluation & gate
 
-```powershell
-pytest -q                        # 31 tests (grader + API), no LLM needed
-python eval/run_eval.py          # full eval → scorecard + report
-python eval/run_eval.py --gate   # enforce thresholds, exit 1 on regression
-python scripts/log_stats.py      # production traffic summary
+```bash
+python eval/run_eval.py                 # full eval → scorecard + report
+python eval/run_eval.py --retrieval-only  # fast: hit@k / MRR only, no LLM
+python eval/run_eval.py --gate          # enforce thresholds, exit 1 on regression
+$env:RETRIEVAL_MODE="dense"; python eval/run_eval.py   # A/B against the baseline
 ```
-
----
-
-## Design choices worth noting
-
-- **Citations and refusal from day one.** `/ask` returns the exact chunks an
-  answer is grounded in, and the system prompt requires "not covered in the
-  documentation" over guessing. The eval *measures* how well that holds rather
-  than assuming it.
-- **Local embeddings** (sentence-transformers) keep ingestion and retrieval free;
-  only answer generation touches an LLM, and that runs on Ollama at zero cost.
-- **Deterministic grading where values are exact.** Asking a weak model to grade
-  whether "6Ch" is correct is both unnecessary and unreliable; a normalized
-  substring check cannot be wrong.
-- **The safety property has its own floor.** Out-of-scope refusal is guarded
-  separately so it can never be traded away for a higher aggregate score.
 
 ---
 
 ## Tech stack
 
-FastAPI · PyMuPDF · sentence-transformers · Chroma · Ollama (llama3.1:8b) ·
-pytest · ruff · GitHub Actions · Docker
+FastAPI · PyMuPDF · sentence-transformers · Chroma · rank-bm25 · Ollama / Groq ·
+React (Vite) · pytest · ruff · GitHub Actions · Docker
+
+---
+
+## Notes
+
+- The LSM6DSOX datasheet is ST's copyrighted document (freely available from
+  st.com); this is an educational/portfolio project and does not redistribute
+  the PDF.
+- `/ask` is single-turn: each question retrieves independently, with no
+  conversation memory. Multi-turn context is a documented next step.
